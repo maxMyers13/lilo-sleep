@@ -205,7 +205,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-4xl">🌙</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome to Lilo Sleep!</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Welcome to SleepTax!</h1>
           <p className="text-slate-400">Join or create a group to start tracking your sleep with friends.</p>
         </div>
 

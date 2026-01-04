@@ -5,16 +5,16 @@ import { MIN_STREAK_HOURS } from '../constants';
 
 const MOCK_USER: User = {
   id: 'user-1',
-  email: 'demo@lilo.app',
+  email: 'demo@sleeptax.app',
   name: 'Alex (You)',
   avatarUrl: 'https://picsum.photos/200',
 };
 
 const MOCK_USERS: User[] = [
   MOCK_USER,
-  { id: 'user-2', email: 'sarah@lilo.app', name: 'Sarah', avatarUrl: 'https://picsum.photos/201' },
-  { id: 'user-3', email: 'mike@lilo.app', name: 'Mike', avatarUrl: 'https://picsum.photos/202' },
-  { id: 'user-4', email: 'jess@lilo.app', name: 'Jess', avatarUrl: 'https://picsum.photos/203' },
+  { id: 'user-2', email: 'sarah@sleeptax.app', name: 'Sarah', avatarUrl: 'https://picsum.photos/201' },
+  { id: 'user-3', email: 'mike@sleeptax.app', name: 'Mike', avatarUrl: 'https://picsum.photos/202' },
+  { id: 'user-4', email: 'jess@sleeptax.app', name: 'Jess', avatarUrl: 'https://picsum.photos/203' },
 ];
 
 const MOCK_GROUP: Group = {
