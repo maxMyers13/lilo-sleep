@@ -212,7 +212,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             {/* Minutes */}
             <div className="mb-6">
               <p className="text-slate-500 text-xs uppercase tracking-wide mb-2 text-center">Minutes</p>
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center gap-4">
+                <button 
+                  onClick={() => setSleepMinutes(Math.max(0, sleepMinutes - 1))}
+                  className="w-12 h-12 rounded-full bg-[#1F2937] text-white text-xl font-bold hover:bg-[#374151] transition-colors"
+                >
+                  -
+                </button>
                 <input
                   type="number"
                   min="0"
@@ -222,8 +228,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     const val = parseInt(e.target.value) || 0;
                     setSleepMinutes(Math.max(0, Math.min(59, val)));
                   }}
-                  className="w-20 h-14 text-center text-white text-3xl font-bold bg-[#1F2937] rounded-xl border border-slate-600 focus:border-blue-500 focus:outline-none"
+                  className="w-16 h-14 text-center text-white text-4xl font-bold bg-transparent border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
+                <button 
+                  onClick={() => setSleepMinutes(Math.min(59, sleepMinutes + 1))}
+                  className="w-12 h-12 rounded-full bg-[#1F2937] text-white text-xl font-bold hover:bg-[#374151] transition-colors"
+                >
+                  +
+                </button>
               </div>
               <p className="text-slate-600 text-xs text-center mt-3">
                 Total: {sleepHours}h {sleepMinutes}m
