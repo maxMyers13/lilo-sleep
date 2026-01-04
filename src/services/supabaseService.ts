@@ -554,8 +554,15 @@ export const supabaseService = {
       .eq('week_id', weekId);
 
     // Build leaderboard
+    type ProfileData = { id: string; name: string | null; email: string | null; avatar_url: string | null };
+    
     const leaderboard: LeaderboardEntry[] = members.map((member) => {
-      const profile = member.profiles as { id: string; name: string | null; email: string | null; avatar_url: string | null };
+      // Handle profiles as either array or single object
+      const profilesData = member.profiles;
+      const profile: ProfileData | null = Array.isArray(profilesData) 
+        ? (profilesData[0] as ProfileData | undefined) || null
+        : (profilesData as unknown as ProfileData);
+      
       const userEntries = allEntries?.filter(e => e.user_id === member.user_id) || [];
       const totalHours = userEntries.reduce((sum, e) => sum + parseFloat(e.hours), 0);
       const pledge = pledges?.find(p => p.user_id === member.user_id);
@@ -575,10 +582,10 @@ export const supabaseService = {
       return {
         userId: member.user_id,
         user: {
-          id: profile.id,
-          email: profile.email || '',
-          name: profile.name || 'User',
-          avatarUrl: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || 'User')}&background=3B82F6&color=fff`,
+          id: profile?.id || member.user_id,
+          email: profile?.email || '',
+          name: profile?.name || 'User',
+          avatarUrl: profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.name || 'User')}&background=3B82F6&color=fff`,
         },
         totalHours,
         streak,
