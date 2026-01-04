@@ -5,13 +5,19 @@ import { SleepEntry } from '../types';
 
 interface WeeklyChartProps {
   entries: SleepEntry[];
-  weekStartDate: string;
+  weekStartDate?: string;
 }
 
 export const WeeklyChart: React.FC<WeeklyChartProps> = ({ entries, weekStartDate }) => {
-  // Generate last 7 days
+  // Generate last 7 days - use provided start date or calculate from 6 days ago
   const days = [];
-  const startDate = new Date(weekStartDate);
+  const startDate = weekStartDate 
+    ? new Date(weekStartDate) 
+    : (() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 6);
+        return d;
+      })();
   
   for (let i = 0; i < 7; i++) {
     const date = new Date(startDate);
@@ -51,7 +57,7 @@ export const WeeklyChart: React.FC<WeeklyChartProps> = ({ entries, weekStartDate
               />
               {day.hasEntry && (
                 <span className="absolute -top-5 text-xs text-slate-300 font-medium">
-                  {day.hours}h
+                  {day.hours.toFixed(1)}h
                 </span>
               )}
             </div>

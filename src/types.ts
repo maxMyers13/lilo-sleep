@@ -23,6 +23,14 @@ export interface Week {
   winnerId?: string | null;
 }
 
+export interface WeeklyPledge {
+  id: string;
+  weekId: string;
+  userId: string;
+  amount: number;
+  createdAt: string;
+}
+
 export interface SleepEntry {
   id: string;
   userId: string;
@@ -36,7 +44,8 @@ export interface LeaderboardEntry {
   userId: string;
   user: User;
   totalHours: number;
-  streak: number; // Consecutive days this week
+  streak: number; // Consecutive days >= 7.5 hrs
+  taxPledged: number; // Amount pledged for this week
   rank: number;
   entriesCount: number;
 }
