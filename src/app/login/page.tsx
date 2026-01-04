@@ -52,10 +52,10 @@ export default function LoginPage() {
       <div className="relative z-10 bg-[#111827] rounded-t-[2.5rem] p-8 pb-12 w-full shadow-[0_-20px_60px_rgba(0,0,0,0.6)] border-t border-white/5">
         <div className="max-w-md mx-auto">
           <h1 className="text-3xl font-bold text-white mb-4 leading-tight">
-            Track your sleep <br /> everyday
+            Sleep well — or pay the tax.
           </h1>
           <p className="text-slate-400 text-sm leading-relaxed mb-10">
-            Get an overview of how you sleep every day, get insight results in this app.
+            Track your sleep with friends, compete weekly, and put real consequences on bad habits. Miss the mark, and everyone sees it.
           </p>
 
           <button 
