@@ -145,6 +145,29 @@ export const supabaseService = {
     return leaderboard.filter(e => e.entriesCount > 0);
   },
 
+  // Ensure user profile exists (for users who signed up before trigger was created)
+  ensureProfile: async (): Promise<void> => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return;
+
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!existing) {
+      await supabase.from('profiles').insert({
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
+        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+      });
+    }
+  },
+
   // Log sleep for a specific date
   logSleep: async (date: string, hours: number): Promise<SleepEntry> => {
     const supabase = createClient();
@@ -154,13 +177,16 @@ export const supabaseService = {
       throw new Error('Not authenticated');
     }
 
+    // Ensure profile exists first
+    await supabaseService.ensureProfile();
+
     // Check if entry already exists for this date
     const { data: existing } = await supabase
       .from('sleep_entries')
       .select('id')
       .eq('user_id', user.id)
       .eq('wake_date', date)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       // Update existing entry
