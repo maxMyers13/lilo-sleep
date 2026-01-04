@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Week, SleepEntry, LeaderboardEntry } from '../types';
-import { mockService } from '../services/mockService';
+import { User, SleepEntry, LeaderboardEntry } from '../types';
+import { supabaseService } from '../services/supabaseService';
 import { Card } from './Card';
 import { Button } from './Button';
 import { WeeklyChart } from './WeeklyChart';
@@ -13,7 +13,6 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
-  const [week, setWeek] = useState<Week | null>(null);
   const [entries, setEntries] = useState<SleepEntry[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,19 +20,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [sleepHours, setSleepHours] = useState(7);
   const [logLoading, setLogLoading] = useState(false);
 
+  // Calculate week start date (7 days ago)
+  const weekStartDate = new Date();
+  weekStartDate.setDate(weekStartDate.getDate() - 6);
+  const weekStartStr = weekStartDate.toISOString();
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
     try {
-      const currentWeek = await mockService.getCurrentWeek();
-      setWeek(currentWeek);
+      const [myEntries, lb] = await Promise.all([
+        supabaseService.getMyWeeklyEntries(user.id),
+        supabaseService.getLeaderboard(),
+      ]);
       
-      const weekEntries = await mockService.getEntriesForWeek(currentWeek.id);
-      setEntries(weekEntries);
-      
-      const lb = await mockService.getLeaderboard(currentWeek.id);
+      setEntries(myEntries);
       setLeaderboard(lb);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -46,7 +49,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     setLogLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      await mockService.logSleep(today, sleepHours);
+      await supabaseService.logSleep(today, sleepHours);
       await loadData();
       setLogModalOpen(false);
     } catch (error) {
@@ -56,9 +59,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     }
   };
 
-  const myEntry = leaderboard.find(e => e.userId === 'user-1');
-  const myTotalHours = myEntry?.totalHours || 0;
+  const myEntry = leaderboard.find(e => e.userId === user.id);
+  const myTotalHours = myEntry?.totalHours || entries.reduce((sum, e) => sum + e.hours, 0);
   const myRank = myEntry?.rank || '-';
+  const myStreak = myEntry?.streak || entries.length;
 
   if (loading) {
     return (
@@ -84,7 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           </div>
         </div>
         <div className="text-right">
-          <p className="text-slate-400 text-xs">Week {week?.weekNumber}</p>
+          <p className="text-slate-400 text-xs">This Week</p>
           <p className="text-blue-400 font-semibold">#{myRank}</p>
         </div>
       </div>
@@ -96,15 +100,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           <p className="text-white text-2xl font-bold">{myTotalHours.toFixed(1)}h</p>
         </Card>
         <Card>
-          <p className="text-slate-400 text-sm mb-1">Streak</p>
-          <p className="text-white text-2xl font-bold">{myEntry?.streak || 0} days</p>
+          <p className="text-slate-400 text-sm mb-1">Days Logged</p>
+          <p className="text-white text-2xl font-bold">{myStreak} days</p>
         </Card>
       </div>
 
       {/* Weekly Chart */}
       <Card className="mb-6">
         <h2 className="text-white font-semibold mb-4">This Week</h2>
-        {week && <WeeklyChart entries={entries.filter(e => e.userId === 'user-1')} weekStartDate={week.startDate} />}
+        <WeeklyChart entries={entries} weekStartDate={weekStartStr} />
       </Card>
 
       {/* Log Sleep Button */}
@@ -117,36 +121,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
       {/* Leaderboard */}
       <Card>
-        <h2 className="text-white font-semibold mb-4">Leaderboard</h2>
-        <div className="space-y-3">
-          {leaderboard.map((entry) => (
-            <div 
-              key={entry.userId}
-              className={`flex items-center gap-3 p-3 rounded-xl ${
-                entry.userId === 'user-1' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-[#1F2937]'
-              }`}
-            >
-              <span className={`w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold ${
-                entry.rank === 1 ? 'bg-yellow-500 text-black' :
-                entry.rank === 2 ? 'bg-slate-400 text-black' :
-                entry.rank === 3 ? 'bg-amber-700 text-white' :
-                'bg-slate-700 text-slate-300'
-              }`}>
-                {entry.rank}
-              </span>
-              <img 
-                src={entry.user.avatarUrl} 
-                alt={entry.user.name}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <div className="flex-1">
-                <p className="text-white text-sm font-medium">{entry.user.name}</p>
-                <p className="text-slate-500 text-xs">{entry.entriesCount} entries</p>
+        <h2 className="text-white font-semibold mb-4">
+          Leaderboard
+          {leaderboard.length === 0 && (
+            <span className="text-slate-500 text-sm font-normal ml-2">
+              (Log sleep to appear!)
+            </span>
+          )}
+        </h2>
+        
+        {leaderboard.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-slate-500 text-sm">No sleep entries yet this week.</p>
+            <p className="text-slate-600 text-xs mt-1">Be the first to log your sleep!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {leaderboard.map((entry) => (
+              <div 
+                key={entry.userId}
+                className={`flex items-center gap-3 p-3 rounded-xl ${
+                  entry.userId === user.id ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-[#1F2937]'
+                }`}
+              >
+                <span className={`w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold ${
+                  entry.rank === 1 ? 'bg-yellow-500 text-black' :
+                  entry.rank === 2 ? 'bg-slate-400 text-black' :
+                  entry.rank === 3 ? 'bg-amber-700 text-white' :
+                  'bg-slate-700 text-slate-300'
+                }`}>
+                  {entry.rank}
+                </span>
+                <img 
+                  src={entry.user.avatarUrl} 
+                  alt={entry.user.name}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium truncate">
+                    {entry.user.name}
+                    {entry.userId === user.id && <span className="text-blue-400 ml-1">(You)</span>}
+                  </p>
+                  <p className="text-slate-500 text-xs">{entry.entriesCount} entries</p>
+                </div>
+                <p className="text-white font-semibold">{entry.totalHours.toFixed(1)}h</p>
               </div>
-              <p className="text-white font-semibold">{entry.totalHours.toFixed(1)}h</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Sign Out */}
@@ -164,14 +186,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             <div className="flex items-center justify-center gap-4 mb-6">
               <button 
                 onClick={() => setSleepHours(Math.max(0, sleepHours - 0.5))}
-                className="w-12 h-12 rounded-full bg-[#1F2937] text-white text-xl font-bold hover:bg-[#374151]"
+                className="w-12 h-12 rounded-full bg-[#1F2937] text-white text-xl font-bold hover:bg-[#374151] transition-colors"
               >
                 -
               </button>
               <span className="text-white text-4xl font-bold w-20 text-center">{sleepHours}</span>
               <button 
                 onClick={() => setSleepHours(Math.min(24, sleepHours + 0.5))}
-                className="w-12 h-12 rounded-full bg-[#1F2937] text-white text-xl font-bold hover:bg-[#374151]"
+                className="w-12 h-12 rounded-full bg-[#1F2937] text-white text-xl font-bold hover:bg-[#374151] transition-colors"
               >
                 +
               </button>
